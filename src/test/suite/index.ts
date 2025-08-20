@@ -4,10 +4,12 @@
  */
 
 import * as path from 'path';
-import * as Mocha from 'mocha';
-import * as glob from 'glob';
+const glob = require('glob');
 
 export function run(): Promise<void> {
+  // Importar Mocha dinámicamente
+  const Mocha = require('mocha');
+  
   // Crear instancia de Mocha
   const mocha = new Mocha({
     ui: 'tdd',
@@ -16,27 +18,27 @@ export function run(): Promise<void> {
 
   const testsRoot = path.resolve(__dirname, '..');
 
-  return new Promise((c, e) => {
-    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+  return new Promise((resolve, reject) => {
+    glob('**/**.test.js', { cwd: testsRoot }, (err: Error | null, files: string[]) => {
       if (err) {
-        return e(err);
+        return reject(err);
       }
 
       // Agregar archivos al conjunto de pruebas
-      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
+      files.forEach((f: string) => mocha.addFile(path.resolve(testsRoot, f)));
 
       try {
         // Ejecutar las pruebas de Mocha
-        mocha.run(failures => {
+        mocha.run((failures: number) => {
           if (failures > 0) {
-            e(new Error(`${failures} tests failed.`));
+            reject(new Error(`${failures} tests failed.`));
           } else {
-            c();
+            resolve();
           }
         });
-      } catch (err) {
-        console.error(err);
-        e(err);
+      } catch (error) {
+        console.error(error);
+        reject(error);
       }
     });
   });

@@ -1,0 +1,24 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "files.exclude": {
+      "out": false,
+      "**/*.vsix": true
+    },
+    "search.exclude": {
+      "out": true,
+      "**/*.vsix": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-typescript-next",
+      "dbaeumer.vscode-eslint"
+    ]
+  }
+}

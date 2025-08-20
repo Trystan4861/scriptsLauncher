@@ -4,7 +4,7 @@ A Visual Studio Code extension that provides a convenient status bar button with
 
 ## Features
 
-- **Status Bar Integration**: Quick access via a "Run Task" button in the status bar
+- **Status Bar Integration**: Quick access via a "Ejecutar tarea" button in the status bar
 - **Script Selection**: Choose which scripts to display in the dropdown menu
 - **One-Click Execution**: Run npm scripts with a single click
 - **Terminal Integration**: Scripts execute in VSCode's integrated terminal
@@ -32,19 +32,19 @@ A Visual Studio Code extension that provides a convenient status bar button with
 ### Initial Setup
 
 1. Open a project that contains a `package.json` file with scripts
-2. Look for the "Run Task" button in the status bar (bottom of VSCode)
+2. Look for the "Ejecutar tarea" button in the status bar (bottom of VSCode)
 3. Click the button to open the dropdown menu
 4. Select "Select Tasks" to choose which scripts to display
 
 ### Running Scripts
 
-1. Click the "Run Task" button in the status bar
+1. Click the "Ejecutar tarea" button in the status bar
 2. Choose a script from the dropdown menu
 3. The script will execute in a new terminal tab
 
 ### Managing Selected Scripts
 
-1. Click "Run Task" → "Selected Tasks" (or "Select Tasks" if none selected)
+1. Click "Ejecutar tarea" → "Selected Tasks" (or "Select Tasks" if none selected)
 2. Check/uncheck scripts you want to show in the dropdown
 3. Click OK to save your selection
 
