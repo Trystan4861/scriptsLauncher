@@ -5,9 +5,16 @@ All notable changes to the "Scripts Launcher" extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2025-08-20
 
-## [1.0.0] - 2025-01-20
+- Fix: Ensure that the extension does not crash when no package.json exists.
+- Fix: Handle errors gracefully if there are issues reading or parsing package.json.
+- Enhancement: Improve documentation by adding more detailed explanations about each feature.
+- Enhancement: Add unit tests for all functions within the extension.
+- Enhancement: Update README.md to include installation instructions and usage examples.
+- Enhancement: Add extension icon to enhance user experience.
+
+## [1.0.0] - 2025-08-20
 
 ### Added
 - Initial release of Scripts Launcher extension
@@ -52,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
-### [1.0.0] - 2025-01-20
+### [1.0.0] - 2025-08-20
 - Initial release with core functionality
 
 ---

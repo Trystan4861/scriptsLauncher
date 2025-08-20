@@ -9,5 +9,10 @@
     "dist": true,
     "**/*.vsix": true
   },
-  "typescript.tsc.autoDetect": "off"
+  "typescript.tsc.autoDetect": "off",
+  "scriptsLauncher.selectedScripts": [
+    "pretest",
+    "package",
+    "publish"
+  ]
 }

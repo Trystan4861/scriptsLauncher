@@ -1,11 +1,12 @@
 {
   "name": "scripts-launcher",
   "displayName": "Scripts Launcher",
-  "description": "Execute npm scripts from a status bar dropdown menu",
-  "version": "1.0.0",
+  "description": "Status bar button to execute selected npm scripts from a dropdown menu",
+  "version": "1.0.1",
   "publisher": "trystan4861",
   "author": "trystan4861",
   "license": "MIT",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.74.0"
   },
