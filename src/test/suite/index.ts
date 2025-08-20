@@ -1,0 +1,43 @@
+/**
+ * Test suite index for Scripts Launcher extension
+ * Author: trystan4861
+ */
+
+import * as path from 'path';
+import * as Mocha from 'mocha';
+import * as glob from 'glob';
+
+export function run(): Promise<void> {
+  // Crear instancia de Mocha
+  const mocha = new Mocha({
+    ui: 'tdd',
+    color: true
+  });
+
+  const testsRoot = path.resolve(__dirname, '..');
+
+  return new Promise((c, e) => {
+    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+      if (err) {
+        return e(err);
+      }
+
+      // Agregar archivos al conjunto de pruebas
+      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
+
+      try {
+        // Ejecutar las pruebas de Mocha
+        mocha.run(failures => {
+          if (failures > 0) {
+            e(new Error(`${failures} tests failed.`));
+          } else {
+            c();
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        e(err);
+      }
+    });
+  });
+}

@@ -1,0 +1,78 @@
+{
+  "name": "scripts-launcher",
+  "displayName": "Scripts Launcher",
+  "description": "Execute npm scripts from a status bar dropdown menu",
+  "version": "1.0.0",
+  "publisher": "trystan4861",
+  "author": "trystan4861",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "npm",
+    "scripts",
+    "task runner",
+    "status bar",
+    "terminal"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "scriptsLauncher.selectTasks",
+        "title": "Select Tasks"
+      },
+      {
+        "command": "scriptsLauncher.runScript",
+        "title": "Run Script"
+      }
+    ],
+    "configuration": {
+      "title": "Scripts Launcher",
+      "properties": {
+        "scriptsLauncher.selectedScripts": {
+          "type": "array",
+          "default": [],
+          "description": "List of selected npm scripts to show in the dropdown"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0",
+    "mocha": "^10.1.0",
+    "@types/mocha": "^10.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trystan4861/scripts-launcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/trystan4861/scripts-launcher/issues"
+  },
+  "homepage": "https://github.com/trystan4861/scripts-launcher#readme"
+}
