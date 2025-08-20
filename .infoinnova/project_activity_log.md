@@ -21,7 +21,7 @@ Starting development of a VSCode extension that provides a status bar button wit
 
 ### Completed Tasks:
 - Created complete VSCode extension structure
-- Implemented status bar button with "Ejecutar tarea" text
+- Implemented status bar button with "Run Task" text
 - Added dropdown menu functionality for script selection
 - Created script selection interface with "Select Tasks"/"Selected Tasks" logic
 - Implemented terminal integration for npm script execution
@@ -42,7 +42,7 @@ Extension is fully functional and ready for testing and packaging.
 **Type:** Finalization  
 
 ### Final Implementation Details:
-- Status bar button displays "Ejecutar tarea" as requested
+- Status bar button displays "Run Task" as requested
 - Dropdown shows selected scripts with play icons
 - Last item changes from "Select Tasks" to "Selected Tasks" when scripts are chosen
 - Scripts execute in integrated terminal with "npm run scriptname"

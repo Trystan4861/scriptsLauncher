@@ -24,4 +24,4 @@ Write-Host "To start developing:" -ForegroundColor Cyan
 Write-Host "1. Open this folder in VSCode" -ForegroundColor White
 Write-Host "2. Press F5 to launch Extension Development Host" -ForegroundColor White
 Write-Host "3. Open a project with package.json in the new window" -ForegroundColor White
-Write-Host "4. Look for 'Ejecutar tarea' button in the status bar" -ForegroundColor White
+Write-Host "4. Look for 'Run Task' button in the status bar" -ForegroundColor White

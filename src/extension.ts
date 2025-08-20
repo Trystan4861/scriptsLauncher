@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     100
   );
   
-  statusBarItem.text = 'Ejecutar tarea';
+  statusBarItem.text = ' Run Task';
   statusBarItem.tooltip = 'Execute npm scripts';
   statusBarItem.command = 'scriptsLauncher.showMenu';
   statusBarItem.show();
