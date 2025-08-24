@@ -1,8 +1,8 @@
 {
   "name": "scripts-launcher",
   "displayName": "Scripts Launcher",
-  "description": "Status bar button to execute selected npm scripts from a dropdown menu",
-  "version": "1.0.1",
+  "description": "Status bar button to execute selected npm scripts and VSCode tasks from a dropdown menu",
+  "version": "1.0.2",
   "publisher": "trystan4861",
   "author": "trystan4861",
   "license": "MIT",
@@ -18,7 +18,9 @@
     "scripts",
     "task runner",
     "status bar",
-    "terminal"
+    "terminal",
+    "vscode tasks",
+    "tasks.json"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -28,11 +30,19 @@
     "commands": [
       {
         "command": "scriptsLauncher.selectTasks",
-        "title": "Select Tasks"
+        "title": "Select npm Scripts"
+      },
+      {
+        "command": "scriptsLauncher.selectVSCodeTasks",
+        "title": "Select VSCode Tasks"
       },
       {
         "command": "scriptsLauncher.runScript",
-        "title": "Run Script"
+        "title": "Run npm Script"
+      },
+      {
+        "command": "scriptsLauncher.runVSCodeTask",
+        "title": "Run VSCode Task"
       }
     ],
     "configuration": {
@@ -42,6 +52,11 @@
           "type": "array",
           "default": [],
           "description": "List of selected npm scripts to show in the dropdown"
+        },
+        "scriptsLauncher.selectedVSCodeTasks": {
+          "type": "array",
+          "default": [],
+          "description": "List of selected VSCode tasks to show in the dropdown"
         }
       }
     }

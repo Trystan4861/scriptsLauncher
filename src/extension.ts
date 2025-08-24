@@ -16,6 +16,35 @@ interface ScriptItem extends vscode.QuickPickItem {
   scriptName: string;
 }
 
+interface VSCodeTask {
+  type: string;
+  script?: string;
+  label?: string;
+  command?: string;
+  args?: string[];
+  group?: string | { kind: string; isDefault?: boolean };
+  problemMatcher?: string | string[];
+  isBackground?: boolean;
+  presentation?: {
+    reveal?: string;
+    focus?: boolean;
+    panel?: string;
+    showReuseMessage?: boolean;
+    clear?: boolean;
+  };
+}
+
+interface TasksJson {
+  version: string;
+  tasks: VSCodeTask[];
+}
+
+interface TaskItem extends vscode.QuickPickItem {
+  taskName: string;
+  taskType: 'npm' | 'vscode';
+  task?: VSCodeTask;
+}
+
 export function activate(context: vscode.ExtensionContext) {
   const statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
@@ -23,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   
   statusBarItem.text = ' Run Task';
-  statusBarItem.tooltip = 'Execute npm scripts';
+  statusBarItem.tooltip = 'Execute npm scripts and VSCode tasks';
   statusBarItem.command = 'scriptsLauncher.showMenu';
   statusBarItem.show();
 
@@ -33,55 +62,94 @@ export function activate(context: vscode.ExtensionContext) {
     () => showScriptsMenu(context)
   );
 
-  // Registrar comando para seleccionar tareas
+  // Registrar comando para seleccionar tareas npm
   const selectTasksCommand = vscode.commands.registerCommand(
     'scriptsLauncher.selectTasks',
     () => selectTasks(context)
   );
 
-  // Registrar comando para ejecutar script
+  // Registrar comando para seleccionar tareas VSCode
+  const selectVSCodeTasksCommand = vscode.commands.registerCommand(
+    'scriptsLauncher.selectVSCodeTasks',
+    () => selectVSCodeTasks(context)
+  );
+
+  // Registrar comando para ejecutar script npm
   const runScriptCommand = vscode.commands.registerCommand(
     'scriptsLauncher.runScript',
     (scriptName: string) => runScript(scriptName)
+  );
+
+  // Registrar comando para ejecutar tarea VSCode
+  const runVSCodeTaskCommand = vscode.commands.registerCommand(
+    'scriptsLauncher.runVSCodeTask',
+    (taskName: string) => runVSCodeTask(taskName)
   );
 
   context.subscriptions.push(
     statusBarItem,
     showMenuCommand,
     selectTasksCommand,
-    runScriptCommand
+    selectVSCodeTasksCommand,
+    runScriptCommand,
+    runVSCodeTaskCommand
   );
 }
 
 async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> {
   const config = vscode.workspace.getConfiguration('scriptsLauncher');
-  const selectedScripts: string[] = config.get('selectedScripts', []);
+  const selectedNpmScripts: string[] = config.get('selectedScripts', []);
+  const selectedVSCodeTasks: string[] = config.get('selectedVSCodeTasks', []);
   
   const menuItems: vscode.QuickPickItem[] = [];
   
-  // Agregar scripts seleccionados
-  if (selectedScripts.length > 0) {
-    selectedScripts.forEach(scriptName => {
+  // Agregar scripts npm seleccionados
+  if (selectedNpmScripts.length > 0) {
+    selectedNpmScripts.forEach(scriptName => {
       menuItems.push({
         label: `$(play) ${scriptName}`,
         description: 'Run npm script',
         detail: `npm run ${scriptName}`
       });
     });
-    
-    // Separador
+  }
+  
+  // Agregar tareas VSCode seleccionadas
+  if (selectedVSCodeTasks.length > 0) {
+    const tasksJson = readTasksJson();
+    if (tasksJson) {
+      selectedVSCodeTasks.forEach(taskName => {
+        const task = tasksJson.tasks.find(t => getTaskName(t) === taskName);
+        if (task) {
+          menuItems.push({
+            label: `$(tools) ${taskName}`,
+            description: 'Run VSCode task',
+            detail: getTaskDescription(task)
+          });
+        }
+      });
+    }
+  }
+  
+  // Separador si hay tareas seleccionadas
+  if (selectedNpmScripts.length > 0 || selectedVSCodeTasks.length > 0) {
     menuItems.push({
       label: '',
       kind: vscode.QuickPickItemKind.Separator
     });
   }
   
-  // Opción para seleccionar tareas
-  const selectTasksLabel = selectedScripts.length > 0 ? 'Selected Tasks' : 'Select Tasks';
+  // Opciones para seleccionar tareas
   menuItems.push({
-    label: `$(gear) ${selectTasksLabel}`,
-    description: 'Configure which scripts to show',
+    label: `$(gear) Select npm Scripts`,
+    description: 'Configure npm scripts to show',
     detail: 'Choose from package.json scripts'
+  });
+  
+  menuItems.push({
+    label: `$(settings-gear) Select VSCode Tasks`,
+    description: 'Configure VSCode tasks to show',
+    detail: 'Choose from .vscode/tasks.json'
   });
 
   const selectedItem = await vscode.window.showQuickPick(menuItems, {
@@ -92,13 +160,20 @@ async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  if (selectedItem.label.includes('$(gear)')) {
-    // Abrir selección de tareas
+  if (selectedItem.label.includes('Select npm Scripts')) {
+    // Abrir selección de scripts npm
     await vscode.commands.executeCommand('scriptsLauncher.selectTasks');
+  } else if (selectedItem.label.includes('Select VSCode Tasks')) {
+    // Abrir selección de tareas VSCode
+    await vscode.commands.executeCommand('scriptsLauncher.selectVSCodeTasks');
   } else if (selectedItem.label.includes('$(play)')) {
-    // Ejecutar script
+    // Ejecutar script npm
     const scriptName = selectedItem.label.replace('$(play) ', '');
     await vscode.commands.executeCommand('scriptsLauncher.runScript', scriptName);
+  } else if (selectedItem.label.includes('$(tools)')) {
+    // Ejecutar tarea VSCode
+    const taskName = selectedItem.label.replace('$(tools) ', '');
+    await vscode.commands.executeCommand('scriptsLauncher.runVSCodeTask', taskName);
   }
 }
 
@@ -184,6 +259,207 @@ function readPackageJson(packageJsonPath: string): PackageJson | null {
   } catch (error) {
     vscode.window.showErrorMessage(`Error reading package.json: ${error}`);
     return null;
+  }
+}
+
+function findTasksJson(): string | null {
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  
+  if (!workspaceFolder) {
+    return null;
+  }
+
+  const tasksJsonPath = path.join(workspaceFolder.uri.fsPath, '.vscode', 'tasks.json');
+  
+  if (fs.existsSync(tasksJsonPath)) {
+    return tasksJsonPath;
+  }
+
+  return null;
+}
+
+function readTasksJson(): TasksJson | null {
+  const tasksJsonPath = findTasksJson();
+  
+  if (!tasksJsonPath) {
+    return null;
+  }
+
+  try {
+    const content = fs.readFileSync(tasksJsonPath, 'utf8');
+    return JSON.parse(content) as TasksJson;
+  } catch (error) {
+    vscode.window.showErrorMessage(`Error reading tasks.json: ${error}`);
+    return null;
+  }
+}
+
+function getTaskName(task: VSCodeTask): string {
+  if (task.label) {
+    return task.label;
+  }
+  
+  if (task.type === 'npm' && task.script) {
+    return `npm: ${task.script}`;
+  }
+  
+  if (task.command) {
+    return task.command;
+  }
+  
+  return `${task.type} task`;
+}
+
+function getTaskDescription(task: VSCodeTask): string {
+  if (task.type === 'npm' && task.script) {
+    return `npm run ${task.script}`;
+  }
+  
+  if (task.command) {
+    const args = task.args ? ` ${task.args.join(' ')}` : '';
+    return `${task.command}${args}`;
+  }
+  
+  return `${task.type} task`;
+}
+
+async function selectVSCodeTasks(context: vscode.ExtensionContext): Promise<void> {
+  const tasksJson = readTasksJson();
+  
+  if (!tasksJson) {
+    vscode.window.showErrorMessage('No .vscode/tasks.json found in workspace');
+    return;
+  }
+
+  if (!tasksJson.tasks || tasksJson.tasks.length === 0) {
+    vscode.window.showInformationMessage('No tasks found in .vscode/tasks.json');
+    return;
+  }
+
+  const config = vscode.workspace.getConfiguration('scriptsLauncher');
+  const currentSelected: string[] = config.get('selectedVSCodeTasks', []);
+  
+  const taskItems: TaskItem[] = tasksJson.tasks.map(task => {
+    const taskName = getTaskName(task);
+    return {
+      label: taskName,
+      description: getTaskDescription(task),
+      picked: currentSelected.includes(taskName),
+      taskName,
+      taskType: 'vscode',
+      task
+    };
+  });
+
+  const selectedItems = await vscode.window.showQuickPick(taskItems, {
+    canPickMany: true,
+    placeHolder: 'Select VSCode tasks to show in the dropdown menu'
+  });
+
+  if (selectedItems) {
+    const selectedTaskNames = selectedItems.map(item => item.taskName);
+    await config.update('selectedVSCodeTasks', selectedTaskNames, vscode.ConfigurationTarget.Workspace);
+    
+    const message = selectedTaskNames.length > 0 
+      ? `Selected ${selectedTaskNames.length} VSCode task(s)`
+      : 'No VSCode tasks selected';
+    vscode.window.showInformationMessage(message);
+  }
+}
+
+async function runVSCodeTask(taskName: string): Promise<void> {
+  const tasksJson = readTasksJson();
+  
+  if (!tasksJson) {
+    vscode.window.showErrorMessage('No .vscode/tasks.json found');
+    return;
+  }
+
+  const task = tasksJson.tasks.find(t => getTaskName(t) === taskName);
+  
+  if (!task) {
+    vscode.window.showErrorMessage(`Task "${taskName}" not found in tasks.json`);
+    return;
+  }
+
+  // Usar la API de tareas de VSCode para ejecutar la tarea
+  try {
+    const taskDefinition: vscode.TaskDefinition = {
+      type: task.type
+    };
+
+    // Agregar propiedades específicas según el tipo de tarea
+    if (task.type === 'npm' && task.script) {
+      taskDefinition.script = task.script;
+    }
+
+    let execution: vscode.TaskExecution;
+    
+    if (task.type === 'npm' && task.script) {
+      // Para tareas npm, usar ShellExecution
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+      }
+      
+      const shellExecution = new vscode.ShellExecution(`npm run ${task.script}`, {
+        cwd: workspaceFolder.uri.fsPath
+      });
+      
+      const vsTask = new vscode.Task(
+        taskDefinition,
+        workspaceFolder,
+        taskName,
+        task.type,
+        shellExecution,
+        task.problemMatcher
+      );
+      
+      execution = await vscode.tasks.executeTask(vsTask);
+    } else if (task.command) {
+      // Para otras tareas con comando
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+      }
+      
+      const shellExecution = new vscode.ShellExecution(task.command, task.args || [], {
+        cwd: workspaceFolder.uri.fsPath
+      });
+      
+      const vsTask = new vscode.Task(
+        taskDefinition,
+        workspaceFolder,
+        taskName,
+        task.type,
+        shellExecution,
+        task.problemMatcher
+      );
+      
+      execution = await vscode.tasks.executeTask(vsTask);
+    } else {
+      // Intentar ejecutar usando la definición completa de la tarea
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+      }
+      
+      const vsTask = new vscode.Task(
+        taskDefinition,
+        workspaceFolder,
+        taskName,
+        task.type
+      );
+      
+      execution = await vscode.tasks.executeTask(vsTask);
+    }
+    
+    vscode.window.showInformationMessage(`Started task: ${taskName}`);
+  } catch (error) {
+    vscode.window.showErrorMessage(`Error running task "${taskName}": ${error}`);
   }
 }
 
