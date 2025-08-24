@@ -28,10 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Configuration Added
 - `scriptsLauncher.selectedVSCodeTasks`: Array of selected VSCode task names
 
+### Fixed
+- **JSONC Support**: Fixed parsing errors when tasks.json contains comments (// or /* */)
+- **Task File Compatibility**: Full support for VSCode's default tasks.json format with comments
+
 ### Technical Improvements
 - **Task Resolution**: Smart task name generation for npm tasks without labels
 - **File Detection**: Automatic detection of `.vscode/tasks.json` files
 - **Task Parsing**: Robust parsing of various task types (npm, shell, etc.)
+- **JSON Comments Support**: Proper handling of JSONC format with comments in tasks.json files
 - **API Integration**: Proper use of VSCode Task API for task execution
 - **Type Safety**: Extended TypeScript interfaces for VSCode task support
 

@@ -278,6 +278,19 @@ function findTasksJson(): string | null {
   return null;
 }
 
+function stripJsonComments(jsonString: string): string {
+  // Eliminar comentarios de línea (//)
+  let result = jsonString.replace(/\/\/.*$/gm, '');
+  
+  // Eliminar comentarios de bloque (/* */)
+  result = result.replace(/\/\*[\s\S]*?\*\//g, '');
+  
+  // Limpiar líneas vacías y espacios extra
+  result = result.replace(/^\s*[\r\n]/gm, '');
+  
+  return result;
+}
+
 function readTasksJson(): TasksJson | null {
   const tasksJsonPath = findTasksJson();
   
@@ -287,7 +300,8 @@ function readTasksJson(): TasksJson | null {
 
   try {
     const content = fs.readFileSync(tasksJsonPath, 'utf8');
-    return JSON.parse(content) as TasksJson;
+    const cleanContent = stripJsonComments(content);
+    return JSON.parse(cleanContent) as TasksJson;
   } catch (error) {
     vscode.window.showErrorMessage(`Error reading tasks.json: ${error}`);
     return null;
