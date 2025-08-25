@@ -2,7 +2,7 @@
   "name": "scripts-launcher",
   "displayName": "Tasks Launcher",
   "description": "Status bar button to execute selected npm tasks and VSCode tasks from a dropdown menu",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "trystan4861",
   "author": "trystan4861",
   "license": "MIT",
@@ -43,6 +43,10 @@
       {
         "command": "scriptsLauncher.runVSCodeTask",
         "title": "Run VSCode Task"
+      },
+      {
+        "command": "scriptsLauncher.showLastTaskLog",
+        "title": "Show Last Task Log"
       }
     ],
     "configuration": {
