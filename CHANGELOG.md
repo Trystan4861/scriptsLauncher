@@ -7,25 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.3] - 2025-08-25
 
+### Added
+- **Task Execution Logging**: Complete logging system for the last executed task
+- **Automatic Terminal Closure**: Terminals close automatically after successful task completion
+- **Task Result Visualization**: New menu option to view detailed logs of the last executed task
+- **Task Status Tracking**: Real-time monitoring of task execution status and exit codes
+
 ### Enhanced
 - **Smart Menu Display**: Menu options now show file availability status
 - **File Existence Validation**: Real-time checking of package.json and .vscode/tasks.json files
 - **Improved User Experience**: Clear indication when required files are missing
 - **Preventive Execution**: Menu items for missing files show descriptive messages but don't execute
+- **Task Execution Feedback**: Enhanced task execution with automatic result capture and logging
+- **Terminal Management**: Intelligent terminal handling with auto-close for successful tasks
 
 ### Fixed
 - **Menu Item Behavior**: Clicking on configuration options when files don't exist no longer attempts execution
 - **Status Bar Text**: Updated from "Run Scripts" to "Run Tasks" for consistency
+- **Task API Integration**: Improved task execution using VSCode's native Task API for better monitoring
 
 ### Refactor
 - **Interface Cleanup**: Removed unused `TaskItem` interface
 - **Code Organization**: Improved interface naming consistency (`NpmTaskItem` ↔ `VSCodeTaskItem`)
 - **Terminology Normalization**: Standardized "scripts" to "tasks" throughout codebase and documentation
+- **Task Execution Architecture**: Refactored task execution to use VSCode Task API for better control
+
+### Commands Added
+- `scriptsLauncher.showLastTaskLog`: Display detailed log of the last executed task
 
 ### Technical Improvements
 - **File Detection Logic**: Enhanced menu generation with real-time file existence checks
 - **Error Prevention**: Added validation before command execution to prevent unnecessary operations
 - **Interface Optimization**: Streamlined TypeScript interfaces for better type safety
+- **Task Monitoring**: Implemented `onDidEndTask` listeners for comprehensive task lifecycle tracking
+- **Log Management**: Automatic cleanup and overwriting of previous task logs
+- **Terminal Lifecycle**: Smart terminal management with conditional auto-closure based on task success
+
+### New Features Details
+- **Task Execution Log Interface**: New `TaskExecutionLog` interface for structured logging
+- **Last Task Result Menu**: Dynamic menu item showing status of the most recent task execution
+- **Detailed Log Viewer**: Opens formatted log in new document with complete task information
+- **Success/Failure Indicators**: Visual indicators (✅/❌) for task execution status
+- **Timestamp Tracking**: Precise execution time logging for task history
+- **Auto-cleanup**: Previous logs are automatically cleared when new tasks are executed
 
 ## [1.0.2] - 2025-08-24
 

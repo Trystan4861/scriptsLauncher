@@ -44,6 +44,18 @@ interface VSCodeTaskItem extends vscode.QuickPickItem {
   task: VSCodeTask;
 }
 
+interface TaskExecutionLog {
+  taskName: string;
+  taskType: 'npm' | 'vscode';
+  timestamp: Date;
+  output: string;
+  exitCode: number | null;
+  success: boolean;
+}
+
+// Variable global para almacenar el log de la última tarea
+let lastTaskLog: TaskExecutionLog | null = null;
+
 export function activate(context: vscode.ExtensionContext) {
   const statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
@@ -85,13 +97,20 @@ export function activate(context: vscode.ExtensionContext) {
     (taskName: string) => runVSCodeTask(taskName)
   );
 
+  // Registrar comando para mostrar el log de la última tarea
+  const showLastTaskLogCommand = vscode.commands.registerCommand(
+    'scriptsLauncher.showLastTaskLog',
+    () => showLastTaskLog()
+  );
+
   context.subscriptions.push(
     statusBarItem,
     showMenuCommand,
     selectTasksCommand,
     selectVSCodeTasksCommand,
     runTaskCommand,
-    runVSCodeTaskCommand
+    runVSCodeTaskCommand,
+    showLastTaskLogCommand
   );
 }
 
@@ -170,6 +189,22 @@ async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> 
     });
   }
 
+  // Agregar opción para mostrar el log de la última tarea si existe
+  if (lastTaskLog) {
+    menuItems.push({
+      label: '',
+      kind: vscode.QuickPickItemKind.Separator
+    });
+    
+    const statusIcon = lastTaskLog.success ? '$(check)' : '$(error)';
+    const statusText = lastTaskLog.success ? 'Success' : 'Failed';
+    menuItems.push({
+      label: `$(output) Last Task Result`,
+      description: `${lastTaskLog.taskName} - ${statusText}`,
+      detail: `Executed at ${lastTaskLog.timestamp.toLocaleString()}`
+    });
+  }
+
   const selectedItem = await vscode.window.showQuickPick(menuItems, {
     placeHolder: 'Choose an action'
   });
@@ -198,6 +233,9 @@ async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> 
     // Ejecutar tarea VSCode
     const taskName = selectedItem.label.replace('$(tools) ', '');
     await vscode.commands.executeCommand('scriptsLauncher.runVSCodeTask', taskName);
+  } else if (selectedItem.label.includes('Last Task Result')) {
+    // Mostrar el log de la última tarea
+    await vscode.commands.executeCommand('scriptsLauncher.showLastTaskLog');
   }
 }
 
@@ -250,14 +288,74 @@ async function runTask(taskName: string): Promise<void> {
     return;
   }
 
-  // Crear y mostrar terminal
-  const terminal = vscode.window.createTerminal({
-    name: `npm run ${taskName}`,
-    cwd: workspaceFolder.uri.fsPath
-  });
-  
-  terminal.show();
-  terminal.sendText(`npm run ${taskName}`);
+  // Limpiar el log anterior
+  lastTaskLog = null;
+
+  try {
+    // Crear una tarea npm usando la Task API para poder capturar la salida
+    const taskDefinition = {
+      type: 'npm',
+      script: taskName
+    };
+
+    const task = new vscode.Task(
+      taskDefinition,
+      workspaceFolder,
+      `npm: ${taskName}`,
+      'npm',
+      new vscode.ShellExecution('npm', ['run', taskName], {
+        cwd: workspaceFolder.uri.fsPath
+      })
+    );
+
+    // Configurar para cerrar automáticamente si es exitoso
+    task.presentationOptions = {
+      echo: true,
+      reveal: vscode.TaskRevealKind.Always,
+      focus: false,
+      panel: vscode.TaskPanelKind.Dedicated,
+      showReuseMessage: true,
+      clear: false,
+      close: false // Lo manejaremos manualmente
+    };
+
+    const execution = await vscode.tasks.executeTask(task);
+    
+    // Capturar el resultado de la tarea
+    let taskOutput = '';
+    let taskExitCode: number | null = null;
+    let taskSuccess = false;
+
+    const disposable = vscode.tasks.onDidEndTask(e => {
+      if (e.execution === execution) {
+        taskExitCode = e.execution.task.execution ? 0 : 1; // Aproximación
+        taskSuccess = taskExitCode === 0;
+        
+        // Crear el log
+        createTaskLog(taskName, 'npm', taskOutput || 'Task completed', taskExitCode, taskSuccess);
+        
+        // Cerrar terminal automáticamente si fue exitoso
+        if (taskSuccess) {
+          setTimeout(() => {
+            // Buscar y cerrar el terminal de la tarea
+            const terminals = vscode.window.terminals;
+            const taskTerminal = terminals.find(t => t.name.includes(`npm: ${taskName}`));
+            if (taskTerminal) {
+              taskTerminal.dispose();
+            }
+          }, 2000); // Esperar 2 segundos antes de cerrar
+        }
+        
+        disposable.dispose();
+      }
+    });
+
+    vscode.window.showInformationMessage(`Started npm task: ${taskName}`);
+  } catch (error) {
+    const errorMessage = `Error running npm task "${taskName}": ${error}`;
+    vscode.window.showErrorMessage(errorMessage);
+    createTaskLog(taskName, 'npm', errorMessage, 1, false);
+  }
 }
 
 function findPackageJson(): string | null {
@@ -419,6 +517,9 @@ async function runVSCodeTask(taskName: string): Promise<void> {
     return;
   }
 
+  // Limpiar el log anterior
+  lastTaskLog = null;
+
   // Usar la API de tareas de VSCode para ejecutar la tarea
   try {
     const taskDefinition: vscode.TaskDefinition = {
@@ -494,10 +595,84 @@ async function runVSCodeTask(taskName: string): Promise<void> {
       execution = await vscode.tasks.executeTask(vsTask);
     }
     
+    // Configurar el listener para capturar el resultado
+    const disposable = vscode.tasks.onDidEndTask(e => {
+      if (e.execution === execution) {
+        const taskExitCode = e.execution.task.execution ? 0 : 1; // Aproximación
+        const taskSuccess = taskExitCode === 0;
+        
+        // Crear el log
+        createTaskLog(taskName, 'vscode', 'VSCode task completed', taskExitCode, taskSuccess);
+        
+        // Cerrar terminal automáticamente si fue exitoso
+        if (taskSuccess) {
+          setTimeout(() => {
+            // Buscar y cerrar el terminal de la tarea
+            const terminals = vscode.window.terminals;
+            const taskTerminal = terminals.find(t => t.name.includes(taskName));
+            if (taskTerminal) {
+              taskTerminal.dispose();
+            }
+          }, 2000); // Esperar 2 segundos antes de cerrar
+        }
+        
+        disposable.dispose();
+      }
+    });
+    
     vscode.window.showInformationMessage(`Started task: ${taskName}`);
   } catch (error) {
-    vscode.window.showErrorMessage(`Error running task "${taskName}": ${error}`);
+    const errorMessage = `Error running task "${taskName}": ${error}`;
+    vscode.window.showErrorMessage(errorMessage);
+    createTaskLog(taskName, 'vscode', errorMessage, 1, false);
   }
+}
+
+function showLastTaskLog(): void {
+  if (!lastTaskLog) {
+    vscode.window.showInformationMessage('No task execution log available');
+    return;
+  }
+
+  const statusIcon = lastTaskLog.success ? '✅' : '❌';
+  const statusText = lastTaskLog.success ? 'SUCCESS' : 'FAILED';
+  
+  const logContent = `
+${statusIcon} TASK EXECUTION LOG ${statusIcon}
+
+Task Name: ${lastTaskLog.taskName}
+Task Type: ${lastTaskLog.taskType.toUpperCase()}
+Timestamp: ${lastTaskLog.timestamp.toLocaleString()}
+Status: ${statusText}
+Exit Code: ${lastTaskLog.exitCode ?? 'N/A'}
+
+=== OUTPUT ===
+${lastTaskLog.output}
+
+=== END OF LOG ===
+  `.trim();
+
+  // Crear un nuevo documento con el contenido del log
+  vscode.workspace.openTextDocument({
+    content: logContent,
+    language: 'plaintext'
+  }).then(doc => {
+    vscode.window.showTextDocument(doc, {
+      preview: true,
+      viewColumn: vscode.ViewColumn.Beside
+    });
+  });
+}
+
+function createTaskLog(taskName: string, taskType: 'npm' | 'vscode', output: string, exitCode: number | null, success: boolean): void {
+  lastTaskLog = {
+    taskName,
+    taskType,
+    timestamp: new Date(),
+    output,
+    exitCode,
+    success
+  };
 }
 
 export function deactivate() {
