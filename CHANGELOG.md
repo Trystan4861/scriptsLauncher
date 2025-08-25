@@ -1,9 +1,31 @@
 # Change Log
 
-All notable changes to the "Scripts Launcher" extension will be documented in this file.
+All notable changes to the "Tasks Launcher" extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.3] - 2025-08-25
+
+### Enhanced
+- **Smart Menu Display**: Menu options now show file availability status
+- **File Existence Validation**: Real-time checking of package.json and .vscode/tasks.json files
+- **Improved User Experience**: Clear indication when required files are missing
+- **Preventive Execution**: Menu items for missing files show descriptive messages but don't execute
+
+### Fixed
+- **Menu Item Behavior**: Clicking on configuration options when files don't exist no longer attempts execution
+- **Status Bar Text**: Updated from "Run Scripts" to "Run Tasks" for consistency
+
+### Refactor
+- **Interface Cleanup**: Removed unused `TaskItem` interface
+- **Code Organization**: Improved interface naming consistency (`NpmTaskItem` ↔ `VSCodeTaskItem`)
+- **Terminology Normalization**: Standardized "scripts" to "tasks" throughout codebase and documentation
+
+### Technical Improvements
+- **File Detection Logic**: Enhanced menu generation with real-time file existence checks
+- **Error Prevention**: Added validation before command execution to prevent unnecessary operations
+- **Interface Optimization**: Streamlined TypeScript interfaces for better type safety
 
 ## [1.0.2] - 2025-08-24
 
@@ -52,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-08-20
 
 ### Added
-- Initial release of Scripts Launcher extension
+- Initial release of Tasks Launcher extension
 - Status bar button with "Run Task" text
 - Dropdown menu for script selection and execution
 - Script selection interface to choose which scripts appear in dropdown
@@ -83,14 +105,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supports workspace-level configuration storage
 
 ### Commands
-- `scriptsLauncher.selectTasks`: Open npm script selection interface
+- `scriptsLauncher.selectTasks`: Open npm tasks selection interface
 - `scriptsLauncher.selectVSCodeTasks`: Open VSCode task selection interface
-- `scriptsLauncher.runScript`: Execute a specific npm script
+- `scriptsLauncher.runTask`: Execute a specific npm task
 - `scriptsLauncher.runVSCodeTask`: Execute a specific VSCode task
 - `scriptsLauncher.showMenu`: Display the main dropdown menu
 
 ### Configuration
-- `scriptsLauncher.selectedScripts`: Array of selected npm script names
+- `scriptsLauncher.selectedTasks`: Array of selected npm task names
 - `scriptsLauncher.selectedVSCodeTasks`: Array of selected VSCode task names
 
 ---

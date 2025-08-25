@@ -1,14 +1,14 @@
-# Scripts Launcher
+# Tasks Launcher
 
-A Visual Studio Code extension that provides a convenient status bar button with dropdown menu for executing npm scripts from your package.json file.
+A Visual Studio Code extension that provides a convenient status bar button with dropdown menu for executing npm tasks and VSCode tasks from your project.
 
 ## Features
 
 - **Status Bar Integration**: Quick access via a "Run Task" button in the status bar
-- **Script Selection**: Choose which scripts to display in the dropdown menu
-- **One-Click Execution**: Run npm scripts with a single click
-- **Terminal Integration**: Scripts execute in VSCode's integrated terminal
-- **Workspace Configuration**: Different script selections per project
+- **Task Selection**: Choose which npm tasks and VSCode tasks to display in the dropdown menu
+- **One-Click Execution**: Run npm tasks and VSCode tasks with a single click
+- **Terminal Integration**: Tasks execute in VSCode's integrated terminal
+- **Workspace Configuration**: Different task selections per project
 
 ## Installation
 
@@ -16,7 +16,7 @@ A Visual Studio Code extension that provides a convenient status bar button with
 
 1. Open VSCode
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Scripts Launcher"
+3. Search for "Tasks Launcher"
 4. Click Install
 
 ### From VSIX Package
@@ -31,33 +31,37 @@ A Visual Studio Code extension that provides a convenient status bar button with
 
 ### Initial Setup
 
-1. Open a project that contains a `package.json` file with scripts
+1. Open a project that contains a `package.json` file with scripts or `.vscode/tasks.json` file
 2. Look for the "Run Task" button in the status bar (bottom of VSCode)
 3. Click the button to open the dropdown menu
-4. Select "Select Tasks" to choose which scripts to display
+4. Select "Select npm Tasks" or "Select VSCode Tasks" to choose which tasks to display
 
-### Running Scripts
+### Running Tasks
 
 1. Click the "Run Task" button in the status bar
-2. Choose a script from the dropdown menu
-3. The script will execute in a new terminal tab
+2. Choose a task from the dropdown menu
+3. The task will execute in a new terminal tab
 
-### Managing Selected Scripts
+### Managing Selected Tasks
 
-1. Click "Run Task" → "Selected Tasks" (or "Select Tasks" if none selected)
-2. Check/uncheck scripts you want to show in the dropdown
+1. Click "Run Task" → "Select npm Tasks" or "Select VSCode Tasks"
+2. Check/uncheck tasks you want to show in the dropdown
 3. Click OK to save your selection
 
 ## Configuration
 
-The extension stores your script selections in the workspace configuration. You can also manually edit the settings:
+The extension stores your task selections in the workspace configuration. You can also manually edit the settings:
 
 ```json
 {
-  "scriptsLauncher.selectedScripts": [
+  "scriptsLauncher.selectedTasks": [
     "build",
     "test",
     "start"
+  ],
+  "scriptsLauncher.selectedVSCodeTasks": [
+    "compile",
+    "watch"
   ]
 }
 ```
@@ -65,29 +69,31 @@ The extension stores your script selections in the workspace configuration. You 
 ## Requirements
 
 - Visual Studio Code 1.74.0 or higher
-- A project with a `package.json` file containing scripts
-- Node.js and npm installed (for script execution)
+- A project with a `package.json` file containing scripts and/or `.vscode/tasks.json` file
+- Node.js and npm installed (for npm task execution)
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-- `scriptsLauncher.selectedScripts`: Array of script names to show in the dropdown menu
+- `scriptsLauncher.selectedTasks`: Array of npm task names to show in the dropdown menu
+- `scriptsLauncher.selectedVSCodeTasks`: Array of VSCode task names to show in the dropdown menu
 
 ## Known Issues
 
-- Scripts must be defined in the root `package.json` file
-- Only npm scripts are currently supported (yarn/pnpm support planned)
+- npm tasks must be defined in the root `package.json` file
+- VSCode tasks must be defined in `.vscode/tasks.json` file
+- Only npm tasks are currently supported for package.json (yarn/pnpm support planned)
 
 ## Release Notes
 
 ### 1.0.0
 
-Initial release of Scripts Launcher
+Initial release of Tasks Launcher
 
 - Status bar button with dropdown menu
-- Script selection interface
-- Terminal integration for script execution
+- Task selection interface for npm and VSCode tasks
+- Terminal integration for task execution
 - Workspace-level configuration
 
 ## Contributing

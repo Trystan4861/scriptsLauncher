@@ -30,15 +30,15 @@ suite('Extension Test Suite', () => {
     const commands = await vscode.commands.getCommands(true);
     
     assert.ok(commands.includes('scriptsLauncher.selectTasks'));
-    assert.ok(commands.includes('scriptsLauncher.runScript'));
+    assert.ok(commands.includes('scriptsLauncher.runTask'));
   });
 
   test('Configuration should have default values', () => {
     const config = vscode.workspace.getConfiguration('scriptsLauncher');
-    const selectedScripts = config.get('selectedScripts');
+    const selectedTasks = config.get('selectedTasks');
     
-    assert.ok(Array.isArray(selectedScripts));
-    assert.strictEqual(selectedScripts.length, 0);
+    assert.ok(Array.isArray(selectedTasks));
+    assert.strictEqual(selectedTasks.length, 0);
   });
 });
 

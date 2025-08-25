@@ -1,6 +1,6 @@
 /**
- * Scripts Launcher VSCode Extension
- * Provides a status bar button with dropdown menu for running npm scripts
+ * Tasks Launcher VSCode Extension
+ * Provides a status bar button with dropdown menu for running npm tasks and VSCode tasks
  * Author: trystan4861
  */
 
@@ -12,8 +12,8 @@ interface PackageJson {
   scripts?: { [key: string]: string };
 }
 
-interface ScriptItem extends vscode.QuickPickItem {
-  scriptName: string;
+interface NpmTaskItem extends vscode.QuickPickItem {
+  taskName: string;
 }
 
 interface VSCodeTask {
@@ -39,10 +39,9 @@ interface TasksJson {
   tasks: VSCodeTask[];
 }
 
-interface TaskItem extends vscode.QuickPickItem {
+interface VSCodeTaskItem extends vscode.QuickPickItem {
   taskName: string;
-  taskType: 'npm' | 'vscode';
-  task?: VSCodeTask;
+  task: VSCodeTask;
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -51,8 +50,8 @@ export function activate(context: vscode.ExtensionContext) {
     100
   );
   
-  statusBarItem.text = ' Run Task';
-  statusBarItem.tooltip = 'Execute npm scripts and VSCode tasks';
+  statusBarItem.text = ' Run Tasks';
+  statusBarItem.tooltip = 'Execute npm tasks and VSCode tasks';
   statusBarItem.command = 'scriptsLauncher.showMenu';
   statusBarItem.show();
 
@@ -75,9 +74,9 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Registrar comando para ejecutar script npm
-  const runScriptCommand = vscode.commands.registerCommand(
-    'scriptsLauncher.runScript',
-    (scriptName: string) => runScript(scriptName)
+  const runTaskCommand = vscode.commands.registerCommand(
+    'scriptsLauncher.runTask',
+    (scriptName: string) => runTask(scriptName)
   );
 
   // Registrar comando para ejecutar tarea VSCode
@@ -91,25 +90,25 @@ export function activate(context: vscode.ExtensionContext) {
     showMenuCommand,
     selectTasksCommand,
     selectVSCodeTasksCommand,
-    runScriptCommand,
+    runTaskCommand,
     runVSCodeTaskCommand
   );
 }
 
 async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> {
   const config = vscode.workspace.getConfiguration('scriptsLauncher');
-  const selectedNpmScripts: string[] = config.get('selectedScripts', []);
+  const selectedNpmTasks: string[] = config.get('selectedTasks', []);
   const selectedVSCodeTasks: string[] = config.get('selectedVSCodeTasks', []);
   
   const menuItems: vscode.QuickPickItem[] = [];
   
-  // Agregar scripts npm seleccionados
-  if (selectedNpmScripts.length > 0) {
-    selectedNpmScripts.forEach(scriptName => {
+  // Agregar tareas npm seleccionadas
+  if (selectedNpmTasks.length > 0) {
+    selectedNpmTasks.forEach(taskName => {
       menuItems.push({
-        label: `$(play) ${scriptName}`,
-        description: 'Run npm script',
-        detail: `npm run ${scriptName}`
+        label: `$(play) ${taskName}`,
+        description: 'Run npm task',
+        detail: `npm run ${taskName}`
       });
     });
   }
@@ -132,7 +131,7 @@ async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> 
   }
   
   // Separador si hay tareas seleccionadas
-  if (selectedNpmScripts.length > 0 || selectedVSCodeTasks.length > 0) {
+  if (selectedNpmTasks.length > 0 || selectedVSCodeTasks.length > 0) {
     menuItems.push({
       label: '',
       kind: vscode.QuickPickItemKind.Separator
@@ -140,17 +139,36 @@ async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> 
   }
   
   // Opciones para seleccionar tareas
-  menuItems.push({
-    label: `$(gear) Select npm Scripts`,
-    description: 'Configure npm scripts to show',
-    detail: 'Choose from package.json scripts'
-  });
+  const packageJsonExists = findPackageJson() !== null;
+  const tasksJsonExists = findTasksJson() !== null;
   
-  menuItems.push({
-    label: `$(settings-gear) Select VSCode Tasks`,
-    description: 'Configure VSCode tasks to show',
-    detail: 'Choose from .vscode/tasks.json'
-  });
+  if (packageJsonExists) {
+    menuItems.push({
+      label: `$(gear) Select npm Tasks`,
+      description: 'Configure npm tasks to show',
+      detail: 'Choose from package.json scripts'
+    });
+  } else {
+    menuItems.push({
+      label: `$(gear) Select npm Tasks`,
+      description: 'package.json not found',
+      detail: 'No package.json file exists in workspace root'
+    });
+  }
+  
+  if (tasksJsonExists) {
+    menuItems.push({
+      label: `$(settings-gear) Select VSCode Tasks`,
+      description: 'Configure VSCode tasks to show',
+      detail: 'Choose from .vscode/tasks.json'
+    });
+  } else {
+    menuItems.push({
+      label: `$(settings-gear) Select VSCode Tasks`,
+      description: '.vscode/tasks.json not found',
+      detail: 'No .vscode/tasks.json file exists in workspace'
+    });
+  }
 
   const selectedItem = await vscode.window.showQuickPick(menuItems, {
     placeHolder: 'Choose an action'
@@ -160,16 +178,22 @@ async function showScriptsMenu(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  if (selectedItem.label.includes('Select npm Scripts')) {
-    // Abrir selección de scripts npm
-    await vscode.commands.executeCommand('scriptsLauncher.selectTasks');
+  if (selectedItem.label.includes('Select npm Tasks')) {
+    // Verificar si existe package.json antes de ejecutar
+    if (packageJsonExists) {
+      await vscode.commands.executeCommand('scriptsLauncher.selectTasks');
+    }
+    // Si no existe, no hacer nada (el usuario ya ve que no está disponible)
   } else if (selectedItem.label.includes('Select VSCode Tasks')) {
-    // Abrir selección de tareas VSCode
-    await vscode.commands.executeCommand('scriptsLauncher.selectVSCodeTasks');
+    // Verificar si existe tasks.json antes de ejecutar
+    if (tasksJsonExists) {
+      await vscode.commands.executeCommand('scriptsLauncher.selectVSCodeTasks');
+    }
+    // Si no existe, no hacer nada (el usuario ya ve que no está disponible)
   } else if (selectedItem.label.includes('$(play)')) {
-    // Ejecutar script npm
-    const scriptName = selectedItem.label.replace('$(play) ', '');
-    await vscode.commands.executeCommand('scriptsLauncher.runScript', scriptName);
+    // Ejecutar tarea npm
+    const taskName = selectedItem.label.replace('$(play) ', '');
+    await vscode.commands.executeCommand('scriptsLauncher.runTask', taskName);
   } else if (selectedItem.label.includes('$(tools)')) {
     // Ejecutar tarea VSCode
     const taskName = selectedItem.label.replace('$(tools) ', '');
@@ -193,32 +217,32 @@ async function selectTasks(context: vscode.ExtensionContext): Promise<void> {
   }
 
   const config = vscode.workspace.getConfiguration('scriptsLauncher');
-  const currentSelected: string[] = config.get('selectedScripts', []);
+  const currentSelected: string[] = config.get('selectedTasks', []);
   
-  const scriptItems: ScriptItem[] = Object.keys(packageJson.scripts).map(scriptName => ({
-    label: scriptName,
-    description: packageJson.scripts![scriptName],
-    picked: currentSelected.includes(scriptName),
-    scriptName
+  const taskItems: NpmTaskItem[] = Object.keys(packageJson.scripts).map(taskName => ({
+    label: taskName,
+    description: packageJson.scripts![taskName],
+    picked: currentSelected.includes(taskName),
+    taskName
   }));
 
-  const selectedItems = await vscode.window.showQuickPick(scriptItems, {
+  const selectedItems = await vscode.window.showQuickPick(taskItems, {
     canPickMany: true,
-    placeHolder: 'Select scripts to show in the dropdown menu'
+    placeHolder: 'Select tasks to show in the dropdown menu'
   });
 
   if (selectedItems) {
-    const selectedScriptNames = selectedItems.map(item => item.scriptName);
-    await config.update('selectedScripts', selectedScriptNames, vscode.ConfigurationTarget.Workspace);
+    const selectedTaskNames = selectedItems.map(item => item.taskName);
+    await config.update('selectedTasks', selectedTaskNames, vscode.ConfigurationTarget.Workspace);
     
-    const message = selectedScriptNames.length > 0 
-      ? `Selected ${selectedScriptNames.length} script(s)`
-      : 'No scripts selected';
+    const message = selectedTaskNames.length > 0 
+      ? `Selected ${selectedTaskNames.length} task(s)`
+      : 'No tasks selected';
     vscode.window.showInformationMessage(message);
   }
 }
 
-async function runScript(scriptName: string): Promise<void> {
+async function runTask(taskName: string): Promise<void> {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   
   if (!workspaceFolder) {
@@ -228,12 +252,12 @@ async function runScript(scriptName: string): Promise<void> {
 
   // Crear y mostrar terminal
   const terminal = vscode.window.createTerminal({
-    name: `npm run ${scriptName}`,
+    name: `npm run ${taskName}`,
     cwd: workspaceFolder.uri.fsPath
   });
   
   terminal.show();
-  terminal.sendText(`npm run ${scriptName}`);
+  terminal.sendText(`npm run ${taskName}`);
 }
 
 function findPackageJson(): string | null {
@@ -353,14 +377,13 @@ async function selectVSCodeTasks(context: vscode.ExtensionContext): Promise<void
   const config = vscode.workspace.getConfiguration('scriptsLauncher');
   const currentSelected: string[] = config.get('selectedVSCodeTasks', []);
   
-  const taskItems: TaskItem[] = tasksJson.tasks.map(task => {
+  const taskItems: VSCodeTaskItem[] = tasksJson.tasks.map(task => {
     const taskName = getTaskName(task);
     return {
       label: taskName,
       description: getTaskDescription(task),
       picked: currentSelected.includes(taskName),
       taskName,
-      taskType: 'vscode',
       task
     };
   });
